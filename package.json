@@ -1,0 +1,71 @@
+{
+  "name": "errnil",
+  "version": "0.1.0",
+  "description": "if err != nil, for TypeScript. Go-style errors as values with typed error unions, tuple results and zero dependencies.",
+  "keywords": [
+    "error-handling",
+    "result",
+    "errors-as-values",
+    "go",
+    "typescript",
+    "typed-errors",
+    "tuple",
+    "neverthrow",
+    "try-catch"
+  ],
+  "license": "MIT",
+  "author": "Aymane Allaoui",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aymaneallaoui/errnil.git"
+  },
+  "homepage": "https://github.com/aymaneallaoui/errnil#readme",
+  "bugs": "https://github.com/aymaneallaoui/errnil/issues",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.build.json",
+    "typecheck:next": "npx -y -p typescript@7 tsc --noEmit --ignoreConfig -p tsconfig.json",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:types": "vitest run --typecheck.only",
+    "bench": "bun run bench/run.ts",
+    "check": "bun run lint && bun run typecheck && bun run test && bun run test:types && bun run build",
+    "prepublishOnly": "bun run check"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@superbuilders/errors": "4.0.2",
+    "@types/node": "^22.20.3",
+    "effect": "3.22.2",
+    "mitata": "1.0.34",
+    "neverthrow": "8.2.0",
+    "tsdown": "0.23.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.1"
+  }
+}

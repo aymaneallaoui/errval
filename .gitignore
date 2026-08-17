@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+bench/results/
+*.log
+.DS_Store
+.env
+.env.*
+
+# working documents stay local
+docs/
+spikes/
+ARCHITECTURE.md
