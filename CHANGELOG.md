@@ -1,0 +1,30 @@
+# Changelog
+
+All notable changes to this project are recorded here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow
+[SemVer](https://semver.org/).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-09-16
+
+First release.
+
+### Added
+
+- `Result<T, E>` as a readonly `[err, value]` tuple, with `ok`, `fail`,
+  `must`, `valueOr` and `all`.
+- `attempt` for the throw-to-value boundary, sync and async, with an optional
+  error mapper (function or class). `lift` for turning a throwing function
+  into a Result-returning one.
+- `TaggedError(tag)` classes: literal `name`, typed props, `instanceof Error`
+  without calling the `Error` constructor, opt-in stack capture.
+- `wrap`, `is`, `as`, `match`, `join`, and an `errors` namespace object that
+  reads like Go's `errors` package.
+- `Thrown` for non-Error throws and `Joined` for `join`.
+- Type utilities `ErrorOf`, `OkOf`, `Handlers`, `HandlerResult`.
+- Benchmarks against throw/catch, neverthrow, effect and
+  `@superbuilders/errors` on Bun and Node.
+
+[Unreleased]: https://github.com/aymaneallaoui/errnil/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/aymaneallaoui/errnil/releases/tag/v0.1.0
