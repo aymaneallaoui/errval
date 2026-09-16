@@ -39,6 +39,6 @@ describe("native option", () => {
     expect(err).toBeInstanceOf(Native)
     expect(err.message).toBe("ctx: Native")
     expect(JSON.parse(JSON.stringify(err))).toMatchObject({ name: "Native", id: "9" })
-    expect(inspect(new Native({ id: "9" }))).toContain("'9'")
+    expect(inspect(new Native({ id: "9" }))).toMatch(/id: ['"]9['"]/)
   })
 })

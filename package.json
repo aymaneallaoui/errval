@@ -54,8 +54,11 @@
     "test:watch": "vitest",
     "test:types": "vitest run --typecheck.only",
     "bench": "bun run bench/run.ts",
-    "check": "bun run lint && bun run typecheck && bun run test && bun run test:types && bun run build",
-    "prepublishOnly": "bun run check"
+    "check": "bun run lint && bun run typecheck && bun run test && bun run test:types && bun run build && bun run typecheck:floor",
+    "prepublishOnly": "bun run check",
+    "test:bun": "bun test test/*.test.ts",
+    "typecheck:floor": "npx -y -p typescript@5.5 tsc -p compat/tsconfig.json",
+    "examples:deno": "for f in examples/*.ts; do npx -y deno@latest run --allow-env \"$f\"; done"
   },
   "devDependencies": {
     "@ark/attest": "^0.56.3",

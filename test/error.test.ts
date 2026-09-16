@@ -81,7 +81,7 @@ describe("TaggedError", () => {
   test("inspects like an error in Node", () => {
     const text = inspect(new NotFound({ id: "42" }))
     expect(text).toContain("NotFound")
-    expect(text).toContain("'42'")
+    expect(text).toMatch(/id: ['"]42['"]/)
   })
 
   test("instantiation expression form works without a class declaration", () => {

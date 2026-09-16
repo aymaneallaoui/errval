@@ -24,6 +24,8 @@ jobs:
       - run: bun run build
       - name: types also compile under TypeScript 7
         run: bun run typecheck:next
+      - name: published declarations work on TypeScript 5.5
+        run: bun run typecheck:floor
 
   test-node:
     name: tests on node ${{ matrix.node }}
@@ -56,4 +58,16 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run test
+      - name: the same suite under bun's own test runner
+        run: bun run test:bun
       - run: for f in examples/*.ts; do bun run "$f"; done
+
+  test-deno:
+    name: examples on deno
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: for f in examples/*.ts; do deno run --allow-env "$f"; done
