@@ -58,6 +58,7 @@
     "prepublishOnly": "bun run check"
   },
   "devDependencies": {
+    "@ark/attest": "^0.56.3",
     "@biomejs/biome": "2.5.14",
     "@superbuilders/errors": "4.0.2",
     "@types/node": "^22.20.3",

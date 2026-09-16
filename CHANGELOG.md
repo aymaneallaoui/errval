@@ -22,7 +22,13 @@ First release.
 - `wrap`, `is`, `as`, `match`, `join`, and an `errors` namespace object that
   reads like Go's `errors` package.
 - `Thrown` for non-Error throws and `Joined` for `join`.
+- `native: true` option on `TaggedError` for the rare consumer that needs
+  `Error.isError` to say yes, and a Bun-only `console.log` formatter.
+- `Class.parse(value)` on every TaggedError class to revive errors after
+  `JSON.parse` or `structuredClone`.
 - Type utilities `ErrorOf`, `OkOf`, `Handlers`, `HandlerResult`.
+- Type instantiation ceilings for `match`, `attempt`, `all` and `wrap`,
+  enforced with `@ark/attest`.
 - Benchmarks against throw/catch, neverthrow, effect and
   `@superbuilders/errors` on Bun and Node.
 

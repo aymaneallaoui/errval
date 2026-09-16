@@ -1,6 +1,7 @@
 node_modules/
 dist/
 coverage/
+.attest/
 bench/results/
 *.log
 .DS_Store

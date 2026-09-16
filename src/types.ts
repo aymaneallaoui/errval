@@ -47,17 +47,29 @@ export type ConstructorArgs<Props extends object> = {} extends Props
   : [props: Props]
 
 export interface TaggedErrorClass<Tag extends string> {
-  new <Props extends object = {}>(...args: ConstructorArgs<Props>): TaggedErrorInstance<Tag, Props>
+  new (): TaggedErrorInstance<Tag, {}>
+  new <Props extends object>(...args: ConstructorArgs<Props>): TaggedErrorInstance<Tag, Props>
   readonly tag: Tag
   readonly prototype: TaggedErrorBase<Tag>
   is<C extends abstract new (...args: never[]) => unknown>(
     this: C,
     value: unknown,
   ): value is InstanceType<C>
+  parse<C extends abstract new (...args: never[]) => unknown>(
+    this: C,
+    value: unknown,
+  ): InstanceType<C> | undefined
 }
 
 export interface TaggedErrorOptions {
+  /** Capture a stack trace on construction. Costs a few microseconds per error. */
   readonly stack?: boolean
+  /**
+   * Construct through the real `Error` constructor so `Error.isError` and
+   * `Object.prototype.toString` recognise instances. About 150 ns on Node and
+   * 300 ns on Bun instead of 15 to 25 ns.
+   */
+  readonly native?: boolean
 }
 
 export type ErrorMapper<E extends object> =

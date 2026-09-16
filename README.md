@@ -159,7 +159,7 @@ Everything is a named export. There are eleven functions.
 | `valueOr(result, fallback)` | value or fallback (a value or a function of the error) |
 | `all([r1, r2, ...])` | first failure, or a typed tuple of all values |
 | `lift(fn)` | wrap a throwing function once instead of every call |
-| `TaggedError(tag, { stack? })` | define an error class |
+| `TaggedError(tag, { stack?, native? })` | define an error class; each class gets `is(x)` and `parse(json)` |
 | `wrap(err, context)` | prefix the message, link the cause, keep the type |
 | `is(err, ClassOrInstance)` / `as(err, Class)` | search the cause chain |
 | `match(err, handlers)` | exhaustive dispatch on the tag |
@@ -176,9 +176,10 @@ Types: `Result<T, E>`, `Ok<T>`, `Fail<E>`, `AsyncResult<T, E>`,
 
 **Use `const`.** TypeScript only correlates the two halves of a destructured
 tuple for `const` bindings. `let [err, value] = ...` typechecks, but `value`
-stays `T | undefined` after your `if (err)`. Same story if you destructure the
-value in the same statement: `const [err, [a, b]] = all(...)` skips the
-narrowing step. Take the tuple apart after the check.
+stays `T | undefined` after your `if (err)`. Destructuring the value in the
+same statement, `const [err, [a, b]] = all(...)`, is rejected outright
+(TS2488, the value may be `undefined` at that point); take the tuple apart
+after the check.
 
 **Errors are objects, always.** `fail("nope")` is a type error. Objects are
 always truthy, which is what makes `if (err)` sound. The value side can be
@@ -191,59 +192,107 @@ you make a lot of them. Exceptions caught by `attempt` keep their own stack,
 `must` captures one at the throw site, and `TaggedError("X", { stack: true })`
 turns capture on for a class when you want it.
 
-**`Error.isError()` says no.** Because the constructor never runs, the new
-`Error.isError` and Node's `util.types.isNativeError` return `false` for
-tagged errors, and `structuredClone` flattens them to plain objects. Use
-`instanceof`, `NotFound.is(x)` or `is(err, NotFound)`. Logging is unaffected:
-Node prints `NotFound { id: '42' }`, `JSON.stringify` gives you name, message,
-fields and cause.
+**`Error.isError()` says no, unless you ask.** Because the constructor never
+runs, the new `Error.isError` and Node's `util.types.isNativeError` return
+`false` for tagged errors. `instanceof`, `NotFound.is(x)` and `is(err, X)`
+all work, Node logs them as errors, and `JSON.stringify` gives you name,
+message, fields and cause. If something in your stack insists on the native
+slot, `TaggedError("X", { native: true })` constructs through the real `Error`
+constructor with stack capture suppressed: about 165 ns per error on Node and
+300 ns on Bun instead of 15 to 25, still well under a plain `new Error`.
+`structuredClone` and `postMessage` keep only what the platform serialises
+(message, cause) whichever way you construct; `NotFound.parse(value)` revives
+one from JSON or a clone.
 
-**`isolatedDeclarations`.** If you build your own library with that flag on,
-TypeScript refuses `export class X extends TaggedError("X")<...> {}` because
-the base is an expression (Effect's `Data.TaggedError` has the same limit).
-Bind the base first: `const Base = TaggedError("X")` then
-`export class X extends Base<...> {}`.
+**Bun's `console.log`.** Bun formats only native-slot objects as errors, so
+errnil installs a `Bun.inspect.custom` hook on Bun (and only there) that
+prints `[NotFound: message] { id: '42' }` with the cause. Node keeps its own
+formatting.
+
+**`isolatedDeclarations`.** With that flag on, TypeScript refuses any
+expression in an `extends` clause (TS9021), so an exported
+`class X extends TaggedError("X")<...>` will not compile; Effect's
+`Data.TaggedError` has the same limit. Bind and annotate the base, then extend
+the identifier:
+
+```ts
+import { TaggedError, type TaggedErrorClass } from "errnil"
+
+const Base: TaggedErrorClass<"NotFound"> = TaggedError("NotFound")
+export class NotFound extends Base<{ id: string }> {}
+```
 
 ## Performance
 
 Benchmarks live in `bench/` and run with `bun run bench` or `node bench/run.ts`.
 They model real work rather than tight loops: a request handler that parses a
 body, validates it and looks a record up, with 0%, 10% and 50% of requests
-failing; an error born five calls deep and re-wrapped at each layer; the async
-boundary. Averages from one run on a laptop, Bun 1.3.14 and Node 24.16.
+failing; a form validator that reports every bad field; an error born five
+calls deep and re-wrapped at each layer; the async boundary. Averages from one
+run on a laptop, Bun 1.3.14 and Node 24.16, nanoseconds per iteration, lower
+is better.
 
-Request handler, one iteration, nanoseconds (lower is better):
+Request handler (parse, validate, look up, respond):
 
 | failures | errnil | throw/catch | neverthrow | effect (runSync) | @superbuilders/errors |
 | --- | --- | --- | --- | --- | --- |
-| 0%, Bun | 160 | 145 | 164 | 1609 | 163 |
-| 10%, Bun | 166 | 241 | 165 | 1660 | 325 |
-| 50%, Bun | 159 | 596 | 159 | 1875 | 903 |
-| 0%, Node | 225 | 203 | 220 | 1632 | 223 |
-| 10%, Node | 224 | 689 | 211 | 2135 | 995 |
-| 50%, Node | 232 | 2592 | 204 | 4004 | 4128 |
+| 0%, Bun | 156 | 140 | 155 | 1484 | 151 |
+| 10%, Bun | 161 | 232 | 156 | 1705 | 303 |
+| 50%, Bun | 163 | 599 | 157 | 1762 | 869 |
+| 0%, Node | 203 | 195 | 210 | 1665 | 212 |
+| 10%, Node | 219 | 748 | 204 | 2065 | 997 |
+| 50%, Node | 226 | 2623 | 198 | 3952 | 4061 |
+
+Validating a ten-field form and reporting every invalid field:
+
+| invalid fields | errnil | throw AggregateError | neverthrow (plain objects) | effect Data.TaggedError | @superbuilders/errors |
+| --- | --- | --- | --- | --- | --- |
+| 0, Bun | 121 | 117 | 111 | 108 | 116 |
+| 2, Bun | 225 | 1876 | 124 | 1357 | 2944 |
+| 5, Bun | 305 | 3128 | 113 | 2915 | 5334 |
+| 0, Node | 62 | 68 | 66 | 65 | 62 |
+| 2, Node | 309 | 13189 | 79 | 10769 | 24200 |
+| 5, Node | 428 | 26277 | 91 | 26774 | 49690 |
 
 Creating one domain error:
 
 | | Bun | Node |
 | --- | --- | --- |
-| errnil `new NotFound({ id })` | 17 | 24 |
+| errnil `new NotFound({ id })` | 15 | 25 |
 | plain object literal | 7 | 19 |
-| `new Error` subclass | 398 | 1930 |
-| effect `Data.TaggedError` | 488 | 2881 |
-| `@superbuilders/errors.new` | 729 | 4009 |
+| `new Error` subclass | 437 | 1978 |
+| effect `Data.TaggedError` | 516 | 2908 |
+| `@superbuilders/errors.new` | 886 | 4090 |
 
-The honest parts: at 0% failures throw/catch is a few percent faster, because
-the happy path of a `try` block costs nothing and a tuple costs one small
-allocation. `attempt(promise)` adds about 60 to 90 ns to a raw `try { await }`
-for the extra promise it settles through. neverthrow is just as fast as errnil
-on the handler scenario and faster on deep propagation when most calls fail,
-because `wrap` builds a message string per layer and `mapErr` does not. Effect
-is doing a lot more than error handling and is priced accordingly.
+Five layers deep, one `wrap` per layer on the way out:
 
-<p align="center">
-  <img src="assets/diagrams/05-package.png" alt="Package layout: result, attempt, error and types modules behind one index; tooling is bun, tsdown, vitest, mitata and biome" width="820">
-</p>
+| failures | errnil | throw/catch (rethrow with cause) | neverthrow (map/mapErr) |
+| --- | --- | --- | --- |
+| 0%, Bun | 46 | 14 | 64 |
+| 50%, Bun | 129 | 2851 | 145 |
+| 0%, Node | 37 | 14 | 21 |
+| 50%, Node | 260 | 16564 | 152 |
+
+Awaiting one promise through the boundary:
+
+| rejections | errnil `attempt` | raw `try { await }` | neverthrow `ResultAsync` | @superbuilders/errors.try |
+| --- | --- | --- | --- | --- |
+| 0%, Bun | 178 | 115 | 337 | 190 |
+| 50%, Bun | 458 | 541 | 625 | 656 |
+| 0%, Node | 135 | 83 | 233 | 132 |
+| 50%, Node | 1808 | 1756 | 1908 | 1832 |
+
+The honest parts. On the all-success path throw/catch is a few percent faster:
+a `try` block that never throws costs nothing, and a tuple costs one small
+allocation. `attempt(promise)` is one extra promise, about 50 ns, over a raw
+`try { await }`. neverthrow with plain object errors beats errnil on the
+validation and Node propagation rows because those objects carry no name and
+no message; errnil errors are real `Error`-compatible objects with both, and
+`wrap` builds a message string per layer. Once anything on the other side
+calls `new Error`, and that includes Effect's `Data.TaggedError` and every
+throw-based library, errnil is 10x to 100x ahead, and the gap grows with the
+failure rate. The numbers you should care about are the ones that match your
+failure rate.
 
 ## Prior art
 

@@ -34,15 +34,23 @@ function normalize(thrown: unknown, mapper?: ErrorMapper<object>): object {
   return (mapper as (error: Error) => object)(error)
 }
 
-async function settle(
+function toOk(value: unknown): Result<unknown, object> {
+  return [undefined, value]
+}
+
+function toFail(thrown: unknown): Result<unknown, object> {
+  return [normalize(thrown), undefined]
+}
+
+function settle(
   promise: PromiseLike<unknown>,
   mapper?: ErrorMapper<object>,
 ): Promise<Result<unknown, object>> {
-  try {
-    return [undefined, await promise]
-  } catch (thrown) {
-    return [normalize(thrown, mapper), undefined]
-  }
+  const onError =
+    mapper === undefined
+      ? toFail
+      : (thrown: unknown): Result<unknown, object> => [normalize(thrown, mapper), undefined]
+  return Promise.resolve(promise).then(toOk, onError)
 }
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {

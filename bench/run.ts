@@ -8,6 +8,7 @@ await import("./creation.bench.ts")
 await import("./handler.bench.ts")
 await import("./propagation.bench.ts")
 await import("./async.bench.ts")
+await import("./validation.bench.ts")
 
 const bun = (globalThis as { Bun?: { version: string } }).Bun
 const runtime = bun ? `bun-${bun.version}` : `node-${process.versions.node}`

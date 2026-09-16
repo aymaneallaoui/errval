@@ -9,6 +9,9 @@ import { NotFound, NotFoundError } from "./shared.ts"
 // and slow rows: errnil skips it unless you ask, everything built on `new Error` pays it.
 
 class Traced extends TaggedError("NotFoundTraced", { stack: true })<{ readonly id: string }> {}
+class NativeNotFound extends TaggedError("NotFoundNative", { native: true })<{
+  readonly id: string
+}> {}
 class ENotFound extends Data.TaggedError("NotFound")<{ readonly id: string }> {}
 
 let n = 0
@@ -23,6 +26,9 @@ group("create one domain error", () => {
       true,
     )
     bench("errnil TaggedError, stack: true", () => do_not_optimize(new Traced({ id: nextId() })))
+    bench("errnil TaggedError, native: true", () =>
+      do_not_optimize(new NativeNotFound({ id: nextId() })),
+    )
     bench("plain object literal", () => do_not_optimize({ name: "NotFound", id: nextId() }))
     bench("new Error subclass", () => do_not_optimize(new NotFoundError(nextId())))
     bench("effect Data.TaggedError", () => do_not_optimize(new ENotFound({ id: nextId() })))

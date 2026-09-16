@@ -9,7 +9,11 @@ import type {
 
 const BRAND: symbol = Symbol.for("errnil.tagged")
 
-type ErrorWithStack = { captureStackTrace?: (target: object, ctor?: Function) => void }
+type ErrorWithStack = {
+  captureStackTrace?: (target: object, ctor?: Function) => void
+  stackTraceLimit?: number
+}
+const ErrorHost = Error as ErrorConstructor & ErrorWithStack
 
 export function captureStack(target: object, ctor?: Function): void {
   const capture = (Error as ErrorWithStack).captureStackTrace
@@ -81,11 +85,93 @@ class TaggedBase {
     if (value instanceof this) return true
     return typeof this.tag === "string" && isTagged(value) && value.name === this.tag
   }
+
+  static parse(
+    this: (new (props?: object) => object) & { tag?: string },
+    value: unknown,
+  ): object | undefined {
+    if (value instanceof this) return value
+    if (typeof value !== "object" || value === null) return undefined
+    if ((value as { name?: unknown }).name !== this.tag) return undefined
+    const props: Record<string, unknown> = {}
+    const source = value as Record<string, unknown>
+    for (const key in source) if (key !== "name") props[key] = source[key]
+    return new this(props)
+  }
 }
 
 Object.setPrototypeOf(TaggedBase.prototype, Error.prototype)
 Object.defineProperty(TaggedBase.prototype, BRAND, { value: true })
 Object.defineProperty(TaggedBase, BRAND, { value: true })
+
+type BunGlobal = { inspect: (value: unknown, options?: unknown) => string }
+const bun = (globalThis as { Bun?: BunGlobal }).Bun
+
+// Bun's console.log only formats objects with the native error slot as errors. Node
+// already recognises `instanceof Error`, so the hook is installed on Bun alone.
+if (bun !== undefined) {
+  Object.defineProperty(TaggedBase.prototype, Symbol.for("nodejs.util.inspect.custom"), {
+    value: function inspectTagged(this: Record<string, unknown>, _depth: number, options: unknown) {
+      const name = this.name as string
+      const message = this.message as string
+      const head = message === name || message === "" ? name : `${name}: ${message}`
+      const props: Record<string, unknown> = {}
+      let count = 0
+      for (const key of Object.keys(this)) {
+        if (key !== "cause" && key !== "message" && key !== "stack") {
+          props[key] = this[key]
+          count++
+        }
+      }
+      let out = `[${head}]${count > 0 ? ` ${bun.inspect(props, options)}` : ""}`
+      const cause = this.cause
+      if (cause !== undefined) {
+        const inner =
+          cause instanceof Error ? `[${cause.name}: ${cause.message}]` : bun.inspect(cause, options)
+        out += ` { [cause]: ${inner} }`
+      }
+      return typeof this.stack === "string" && this.stack.includes("\n")
+        ? `${out}\n${this.stack}`
+        : out
+    },
+    writable: true,
+    configurable: true,
+  })
+}
+
+function fastClass(withStack: boolean): typeof TaggedBase {
+  if (!withStack) return class extends TaggedBase {}
+  const Class = class extends TaggedBase {
+    constructor(props?: object) {
+      super(props)
+      captureStack(this, Class)
+    }
+  }
+  return Class
+}
+
+// Extends Error so instances get the native error slot; the prototype is re-parented onto
+// TaggedBase afterwards, and statics are copied because super() must keep calling Error.
+function nativeClass(withStack: boolean): typeof TaggedBase {
+  const Class = class extends Error {
+    constructor(props?: object) {
+      const limit = ErrorHost.stackTraceLimit
+      if (!withStack) ErrorHost.stackTraceLimit = 0
+      super()
+      if (!withStack && limit !== undefined) ErrorHost.stackTraceLimit = limit
+      if (props !== undefined) {
+        const self = this as unknown as Record<string, unknown>
+        const source = props as Record<string, unknown>
+        for (const key in source) self[key] = source[key]
+      }
+    }
+  }
+  Object.setPrototypeOf(Class.prototype, TaggedBase.prototype)
+  Object.defineProperty(Class, "is", { value: TaggedBase.is, configurable: true })
+  Object.defineProperty(Class, "parse", { value: TaggedBase.parse, configurable: true })
+  Object.defineProperty(Class, BRAND, { value: true })
+  return Class as unknown as typeof TaggedBase
+}
 
 /**
  * Define an error class. The tag becomes the literal `name`, the props become
@@ -106,14 +192,7 @@ export function TaggedError<const Tag extends string>(
   options?: TaggedErrorOptions,
 ): TaggedErrorClass<Tag> {
   const withStack = options?.stack === true
-  const Class = withStack
-    ? class extends TaggedBase {
-        constructor(props?: object) {
-          super(props)
-          captureStack(this, Class)
-        }
-      }
-    : class extends TaggedBase {}
+  const Class = options?.native === true ? nativeClass(withStack) : fastClass(withStack)
   Object.defineProperty(Class, "name", { value: tag, configurable: true })
   Object.defineProperty(Class, "tag", { value: tag })
   Object.defineProperty(Class.prototype, "name", { value: tag, writable: true, configurable: true })
@@ -137,7 +216,9 @@ export function TaggedError<const Tag extends string>(
 export function wrap<E extends object>(error: E, context: string): E {
   const out = Object.create(Object.getPrototypeOf(error)) as Record<string, unknown>
   const source = error as unknown as Record<string, unknown>
-  for (const key in source) out[key] = source[key]
+  for (const key in source) {
+    if (key !== "message" && key !== "cause") out[key] = source[key]
+  }
   const message = `${context}: ${messageOf(error)}`
   try {
     out.message = message
@@ -150,16 +231,17 @@ export function wrap<E extends object>(error: E, context: string): E {
 
 type Visitor = (error: object) => boolean
 
-function walk(error: unknown, visit: Visitor, seen: Set<object>): object | undefined {
-  if (typeof error !== "object" || error === null || seen.has(error)) return undefined
-  seen.add(error)
+const MAX_DEPTH = 256
+
+function walk(error: unknown, visit: Visitor, depth: number): object | undefined {
+  if (typeof error !== "object" || error === null || depth > MAX_DEPTH) return undefined
   if (visit(error)) return error
-  const found = walk((error as { cause?: unknown }).cause, visit, seen)
+  const found = walk((error as { cause?: unknown }).cause, visit, depth + 1)
   if (found !== undefined) return found
   const nested = (error as { errors?: unknown }).errors
   if (Array.isArray(nested)) {
-    for (const inner of nested) {
-      const hit = walk(inner, visit, seen)
+    for (let i = 0; i < nested.length; i++) {
+      const hit = walk(nested[i], visit, depth + 1)
       if (hit !== undefined) return hit
     }
   }
@@ -183,7 +265,7 @@ function matcherFor(target: object): Visitor {
  * if (is(err, NotFound)) respond(404)
  */
 export function is(error: unknown, target: object): boolean {
-  return walk(error, matcherFor(target), new Set()) !== undefined
+  return walk(error, matcherFor(target), 0) !== undefined
 }
 
 /**
@@ -198,7 +280,7 @@ export function as<C extends abstract new (...args: never[]) => unknown>(
   error: unknown,
   target: C,
 ): InstanceType<C> | undefined {
-  return walk(error, matcherFor(target), new Set()) as InstanceType<C> | undefined
+  return walk(error, matcherFor(target), 0) as InstanceType<C> | undefined
 }
 
 /**
