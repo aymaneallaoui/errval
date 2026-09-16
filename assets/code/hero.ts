@@ -1,4 +1,4 @@
-import { attempt, fail, ok, match, TaggedError } from "errnil"
+import { attempt, fail, ok, match, TaggedError } from "errval"
 
 class NotFound extends TaggedError("NotFound")<{ id: string }> {}
 class DbError extends TaggedError("DbError")<{ cause: Error }> {}

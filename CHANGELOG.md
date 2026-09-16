@@ -32,5 +32,5 @@ First release.
 - Benchmarks against throw/catch, neverthrow, effect and
   `@superbuilders/errors` on Bun and Node.
 
-[Unreleased]: https://github.com/aymaneallaoui/errnil/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/aymaneallaoui/errnil/releases/tag/v0.1.0
+[Unreleased]: https://github.com/aymaneallaoui/errval/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/aymaneallaoui/errval/releases/tag/v0.1.0

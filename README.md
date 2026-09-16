@@ -1,19 +1,19 @@
-# errnil
+# errval
 
-`if err != nil`, for TypeScript.
+Errors as values, the Go way, with the types Go never had.
 
 Errors as values, the way Go does it, with the one thing Go cannot give you:
 the compiler knows exactly which errors a function can return, and it makes
 you handle every one of them.
 
 ```sh
-npm install errnil
+npm install errval
 ```
 
 Zero dependencies. ESM. Node 20+, Bun, Deno, browsers, workers. 1.4 kB gzipped.
 
 <p align="center">
-  <img src="assets/code/hero.svg" alt="errnil in twenty lines" width="820">
+  <img src="assets/code/hero.svg" alt="errval in twenty lines" width="820">
 </p>
 
 ## Why
@@ -24,7 +24,7 @@ nothing unwinds the stack behind your back. What I did not like was losing the
 types. In Go every error is `error`. In TypeScript, with a bit of inference,
 every error can be exactly what it is.
 
-So the idea of errnil is small:
+So the idea of errval is small:
 
 - A result is a plain tuple, `[err, value]`. No class, no `.map`, no `yield*`.
   You check `err`, and TypeScript narrows `value` for you.
@@ -47,7 +47,7 @@ Define errors. The tag becomes the literal `name`, the props become readonly
 fields:
 
 ```ts
-import { TaggedError } from "errnil"
+import { TaggedError } from "errval"
 
 class NotFound extends TaggedError("NotFound")<{ id: string }> {}
 class Forbidden extends TaggedError("Forbidden")<{ reason: string }> {}
@@ -57,7 +57,7 @@ class DbError extends TaggedError("DbError")<{ cause: Error }> {}
 Return them with `fail`, return values with `ok`. The union is inferred:
 
 ```ts
-import { ok, fail, attempt } from "errnil"
+import { ok, fail, attempt } from "errval"
 
 async function getDocument(id: string, user: string) {
   const [err, row] = await attempt(() => db.query(sql, [id]), DbError)
@@ -81,7 +81,7 @@ doc.title
 Handle it at the edge, exhaustively. Forget a case and it will not compile:
 
 ```ts
-import { match } from "errnil"
+import { match } from "errval"
 
 return match(err, {
   NotFound: (e) => respond(404, `no document ${e.id}`),
@@ -101,15 +101,15 @@ That is most of the library.
 <table>
 <tr>
 <th>Go</th>
-<th>errnil</th>
+<th>errval</th>
 </tr>
 <tr>
 <td><img src="assets/code/go.svg" alt="Go" width="420"></td>
-<td><img src="assets/code/errnil.svg" alt="errnil" width="420"></td>
+<td><img src="assets/code/errval.svg" alt="errval" width="420"></td>
 </tr>
 </table>
 
-| Go | errnil |
+| Go | errval |
 | --- | --- |
 | `v, err := f()` | `const [err, v] = f()` |
 | `if err != nil { return nil, err }` | `if (err) return fail(err)` |
@@ -205,7 +205,7 @@ constructor with stack capture suppressed: about 165 ns per error on Node and
 one from JSON or a clone.
 
 **Bun's `console.log`.** Bun formats only native-slot objects as errors, so
-errnil installs a `Bun.inspect.custom` hook on Bun (and only there) that
+errval installs a `Bun.inspect.custom` hook on Bun (and only there) that
 prints `[NotFound: message] { id: '42' }` with the cause. Node keeps its own
 formatting.
 
@@ -216,7 +216,7 @@ expression in an `extends` clause (TS9021), so an exported
 the identifier:
 
 ```ts
-import { TaggedError, type TaggedErrorClass } from "errnil"
+import { TaggedError, type TaggedErrorClass } from "errval"
 
 const Base: TaggedErrorClass<"NotFound"> = TaggedError("NotFound")
 export class NotFound extends Base<{ id: string }> {}
@@ -234,7 +234,7 @@ is better.
 
 Request handler (parse, validate, look up, respond):
 
-| failures | errnil | throw/catch | neverthrow | effect (runSync) | @superbuilders/errors |
+| failures | errval | throw/catch | neverthrow | effect (runSync) | @superbuilders/errors |
 | --- | --- | --- | --- | --- | --- |
 | 0%, Bun | 156 | 140 | 155 | 1484 | 151 |
 | 10%, Bun | 161 | 232 | 156 | 1705 | 303 |
@@ -245,7 +245,7 @@ Request handler (parse, validate, look up, respond):
 
 Validating a ten-field form and reporting every invalid field:
 
-| invalid fields | errnil | throw AggregateError | neverthrow (plain objects) | effect Data.TaggedError | @superbuilders/errors |
+| invalid fields | errval | throw AggregateError | neverthrow (plain objects) | effect Data.TaggedError | @superbuilders/errors |
 | --- | --- | --- | --- | --- | --- |
 | 0, Bun | 121 | 117 | 111 | 108 | 116 |
 | 2, Bun | 225 | 1876 | 124 | 1357 | 2944 |
@@ -258,7 +258,7 @@ Creating one domain error:
 
 | | Bun | Node |
 | --- | --- | --- |
-| errnil `new NotFound({ id })` | 15 | 25 |
+| errval `new NotFound({ id })` | 15 | 25 |
 | plain object literal | 7 | 19 |
 | `new Error` subclass | 437 | 1978 |
 | effect `Data.TaggedError` | 516 | 2908 |
@@ -266,7 +266,7 @@ Creating one domain error:
 
 Five layers deep, one `wrap` per layer on the way out:
 
-| failures | errnil | throw/catch (rethrow with cause) | neverthrow (map/mapErr) |
+| failures | errval | throw/catch (rethrow with cause) | neverthrow (map/mapErr) |
 | --- | --- | --- | --- |
 | 0%, Bun | 46 | 14 | 64 |
 | 50%, Bun | 129 | 2851 | 145 |
@@ -275,7 +275,7 @@ Five layers deep, one `wrap` per layer on the way out:
 
 Awaiting one promise through the boundary:
 
-| rejections | errnil `attempt` | raw `try { await }` | neverthrow `ResultAsync` | @superbuilders/errors.try |
+| rejections | errval `attempt` | raw `try { await }` | neverthrow `ResultAsync` | @superbuilders/errors.try |
 | --- | --- | --- | --- | --- |
 | 0%, Bun | 178 | 115 | 337 | 190 |
 | 50%, Bun | 458 | 541 | 625 | 656 |
@@ -285,12 +285,12 @@ Awaiting one promise through the boundary:
 The honest parts. On the all-success path throw/catch is a few percent faster:
 a `try` block that never throws costs nothing, and a tuple costs one small
 allocation. `attempt(promise)` is one extra promise, about 50 ns, over a raw
-`try { await }`. neverthrow with plain object errors beats errnil on the
+`try { await }`. neverthrow with plain object errors beats errval on the
 validation and Node propagation rows because those objects carry no name and
-no message; errnil errors are real `Error`-compatible objects with both, and
+no message; errval errors are real `Error`-compatible objects with both, and
 `wrap` builds a message string per layer. Once anything on the other side
 calls `new Error`, and that includes Effect's `Data.TaggedError` and every
-throw-based library, errnil is 10x to 100x ahead, and the gap grows with the
+throw-based library, errval is 10x to 100x ahead, and the gap grows with the
 failure rate. The numbers you should care about are the ones that match your
 failure rate.
 
@@ -298,7 +298,7 @@ failure rate.
 
 neverthrow if you want a chainable Result with combinators. Effect if you want
 a whole runtime. `@superbuilders/errors` if you want Go's `errors` package
-but are fine with throwing. errnil sits in the gap: tuple results, inferred
+but are fine with throwing. errval sits in the gap: tuple results, inferred
 error unions, exhaustive matching, and Go's chain-walking helpers, in a
 package small enough to read in one sitting.
 

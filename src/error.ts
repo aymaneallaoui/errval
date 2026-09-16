@@ -7,7 +7,7 @@ import type {
   TaggedErrorOptions,
 } from "./types.ts"
 
-const BRAND: symbol = Symbol.for("errnil.tagged")
+const BRAND: symbol = Symbol.for("errval.tagged")
 
 type ErrorWithStack = {
   captureStackTrace?: (target: object, ctor?: Function) => void
@@ -301,7 +301,7 @@ export function match<E extends object, const H extends Handlers<E>>(
   const name = nameOf(error)
   const handler = isTagged(error) && Object.hasOwn(table, name) ? table[name] : table._
   if (typeof handler !== "function") {
-    throw new TypeError(`errnil.match: no handler for ${name}`)
+    throw new TypeError(`errval.match: no handler for ${name}`)
   }
   return handler(error) as HandlerResult<H>
 }

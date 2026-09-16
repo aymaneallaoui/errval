@@ -37,7 +37,7 @@ function makeForms(count: number, invalidPerForm: number): Form[] {
 
 class Invalid extends TaggedError("Invalid")<{ readonly field: string }> {}
 
-function errnilValidate(form: Form): Result<Form, Invalid> {
+function errvalValidate(form: Form): Result<Form, Invalid> {
   const errors: Invalid[] = []
   for (const field of FIELDS) {
     if (form[field] === "") errors.push(new Invalid({ field }))
@@ -92,8 +92,8 @@ for (const invalid of [0, 2, 5]) {
   group(`validate a 10-field form, ${invalid} invalid fields`, () => {
     summary(() => {
       const next = rotate(forms)
-      bench("errnil (TaggedError + join)", () => {
-        const [err, form] = errnilValidate(next())
+      bench("errval (TaggedError + join)", () => {
+        const [err, form] = errvalValidate(next())
         do_not_optimize(err ? err.message.length : form)
       }).baseline(true)
       const next2 = rotate(forms)

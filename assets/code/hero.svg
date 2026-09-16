@@ -10,7 +10,7 @@
 }
 </style><rect width="655.67" height="521.75" fill="#1e1e2e" rx="10.00" ry="10.00" x="0.00px" y="0.00px"/>
 <g font-family="JetBrains Mono" font-size="14.00px" fill="#cdd6f4" clip-path="url(#terminalMask)">
-<text x="32.00px" y="45.00px" xml:space="preserve"><tspan fill="#cba6f7">import</tspan> { attempt, fail, ok, match, TaggedError } <tspan fill="#cba6f7">from</tspan> <tspan fill="#a6e3a1">&quot;errnil&quot;</tspan>
+<text x="32.00px" y="45.00px" xml:space="preserve"><tspan fill="#cba6f7">import</tspan> { attempt, fail, ok, match, TaggedError } <tspan fill="#cba6f7">from</tspan> <tspan fill="#a6e3a1">&quot;errval&quot;</tspan>
 </text><text x="32.00px" y="66.00px" xml:space="preserve">
 </text><text x="32.00px" y="87.00px" xml:space="preserve"><tspan fill="#cba6f7">class</tspan> NotFound <tspan fill="#cba6f7">extends</tspan> TaggedError(<tspan fill="#a6e3a1">&quot;NotFound&quot;</tspan>)<tspan fill="#89dceb" font-weight="bold">&lt;</tspan>{ id: <tspan fill="#f38ba8">string</tspan> }<tspan fill="#89dceb" font-weight="bold">&gt;</tspan> {}
 </text><text x="32.00px" y="108.00px" xml:space="preserve"><tspan fill="#cba6f7">class</tspan> DbError <tspan fill="#cba6f7">extends</tspan> TaggedError(<tspan fill="#a6e3a1">&quot;DbError&quot;</tspan>)<tspan fill="#89dceb" font-weight="bold">&lt;</tspan>{ cause: <tspan fill="#f38ba8">Error</tspan> }<tspan fill="#89dceb" font-weight="bold">&gt;</tspan> {}

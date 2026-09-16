@@ -23,7 +23,7 @@ for (const rejectRate of [0, 0.1, 0.5]) {
   group(`await one promise, ${rejectRate * 100}% rejections`, () => {
     summary(() => {
       const next = rotate(sources)
-      bench("errnil attempt(promise)", async () => {
+      bench("errval attempt(promise)", async () => {
         const [err, value] = await attempt(next()())
         do_not_optimize(err ? err.message.length : value)
       }).baseline(true)

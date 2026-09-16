@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for looking. errnil is small on purpose, so most contributions are bug
+Thanks for looking. errval is small on purpose, so most contributions are bug
 fixes, type-level fixes, docs, and benchmarks. Bigger ideas are welcome too,
 but open an issue first so we can talk about whether they fit before you spend
 an evening on them.
@@ -11,8 +11,8 @@ You need [bun](https://bun.sh) (the package manager and script runner here)
 and Node 20 or newer (tests and examples run on both).
 
 ```sh
-git clone https://github.com/aymaneallaoui/errnil
-cd errnil
+git clone https://github.com/aymaneallaoui/errval
+cd errval
 bun install
 bun run check      # lint, typecheck, tests, type tests, build
 ```

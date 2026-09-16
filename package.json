@@ -1,7 +1,7 @@
 {
-  "name": "errnil",
+  "name": "errval",
   "version": "0.1.0",
-  "description": "if err != nil, for TypeScript. Go-style errors as values with typed error unions, tuple results and zero dependencies.",
+  "description": "Errors as values, the Go way: tuple results, typed error unions, exhaustive matching, zero dependencies.",
   "keywords": [
     "error-handling",
     "result",
@@ -17,10 +17,10 @@
   "author": "Aymane Allaoui",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aymaneallaoui/errnil.git"
+    "url": "git+https://github.com/aymaneallaoui/errval.git"
   },
-  "homepage": "https://github.com/aymaneallaoui/errnil#readme",
-  "bugs": "https://github.com/aymaneallaoui/errnil/issues",
+  "homepage": "https://github.com/aymaneallaoui/errval#readme",
+  "bugs": "https://github.com/aymaneallaoui/errval/issues",
   "type": "module",
   "sideEffects": false,
   "files": [

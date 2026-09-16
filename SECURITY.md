@@ -1,6 +1,6 @@
 # Security
 
-errnil has no dependencies, does no I/O, and never evaluates input. The
+errval has no dependencies, does no I/O, and never evaluates input. The
 attack surface is small, but it is not zero: it creates objects from data you
 pass in, and it walks `cause` chains on errors that may have come from
 anywhere.

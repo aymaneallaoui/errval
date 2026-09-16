@@ -8,12 +8,12 @@ import { NotFound, NotFoundError, RATES, rotate } from "./shared.ts"
 
 const DEPTH = 5
 
-function errnilLeaf(id: string): Result<number, NotFound> {
+function errvalLeaf(id: string): Result<number, NotFound> {
   return id.startsWith("m") ? fail(new NotFound({ id })) : ok(id.length)
 }
-function errnilLayer(id: string, depth: number): Result<number, NotFound> {
-  if (depth === 0) return errnilLeaf(id)
-  const [err, value] = errnilLayer(id, depth - 1)
+function errvalLayer(id: string, depth: number): Result<number, NotFound> {
+  if (depth === 0) return errvalLeaf(id)
+  const [err, value] = errvalLayer(id, depth - 1)
   if (err) return fail(wrap(err, `layer ${depth}`))
   return ok(value + 1)
 }
@@ -52,8 +52,8 @@ for (const rate of RATES) {
   group(`propagate through ${DEPTH} layers, ${rate.label}`, () => {
     summary(() => {
       const next = rotate(ids)
-      bench("errnil (wrap per layer)", () => {
-        const [err, value] = errnilLayer(next(), DEPTH)
+      bench("errval (wrap per layer)", () => {
+        const [err, value] = errvalLayer(next(), DEPTH)
         do_not_optimize(err ? err.message.length : value)
       }).baseline(true)
       const next2 = rotate(ids)

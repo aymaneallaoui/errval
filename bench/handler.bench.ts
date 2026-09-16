@@ -24,8 +24,8 @@ function respond(status: number, _body: unknown): number {
   return status
 }
 
-// errnil
-function errnilHandler(body: string): number {
+// errval
+function errvalHandler(body: string): number {
   const [perr, input] = attempt(() => JSON.parse(body) as Input, Parse)
   if (perr) return respond(400, perr.message)
   if (input.age < 0) return respond(422, new Invalid({ field: "age" }).message)
@@ -148,7 +148,7 @@ for (const rate of RATES) {
   group(`request handler, ${rate.label}`, () => {
     summary(() => {
       const next = rotate(bodies)
-      bench("errnil", () => do_not_optimize(errnilHandler(next()))).baseline(true)
+      bench("errval", () => do_not_optimize(errvalHandler(next()))).baseline(true)
       const next2 = rotate(bodies)
       bench("throw/catch", () => do_not_optimize(throwHandler(next2())))
       const next3 = rotate(bodies)
