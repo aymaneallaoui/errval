@@ -13,7 +13,7 @@ npm install errval
 Zero dependencies. ESM. Node 20+, Bun, Deno, browsers, workers. 1.4 kB gzipped.
 
 <p align="center">
-  <img src="assets/code/hero.svg" alt="errval in twenty lines" width="820">
+  <img src="assets/code/hero.png" alt="errval in twenty lines" width="820">
 </p>
 
 ## Why
@@ -104,8 +104,8 @@ That is most of the library.
 <th>errval</th>
 </tr>
 <tr>
-<td><img src="assets/code/go.svg" alt="Go" width="420"></td>
-<td><img src="assets/code/errval.svg" alt="errval" width="420"></td>
+<td><img src="assets/code/go.png" alt="Go" width="420"></td>
+<td><img src="assets/code/errval.png" alt="errval" width="420"></td>
 </tr>
 </table>
 
@@ -136,7 +136,7 @@ fields. The original is the `cause`. `is` and `as` walk the chain like Go's
 the tag is unchanged.
 
 <p align="center">
-  <img src="assets/code/wrap.svg" alt="wrap, is, as" width="820">
+  <img src="assets/code/wrap.png" alt="wrap, is, as" width="820">
 </p>
 
 If you prefer Go's spelling there is an `errors` object with the same

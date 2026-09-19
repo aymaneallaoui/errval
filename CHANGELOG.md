@@ -6,6 +6,14 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-20
+
+### Changed
+
+- README code images are PNG instead of SVG (each SVG embedded a 350 kB font).
+- First release published through GitHub Actions with npm trusted publishing
+  and provenance.
+
 ## [0.1.0] - 2026-09-16
 
 First release.
@@ -32,5 +40,6 @@ First release.
 - Benchmarks against throw/catch, neverthrow, effect and
   `@superbuilders/errors` on Bun and Node.
 
-[Unreleased]: https://github.com/aymaneallaoui/errval/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/aymaneallaoui/errval/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/aymaneallaoui/errval/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/aymaneallaoui/errval/releases/tag/v0.1.0

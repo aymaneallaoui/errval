@@ -1,6 +1,6 @@
 {
   "name": "errval",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Errors as values, the Go way: tuple results, typed error unions, exhaustive matching, zero dependencies.",
   "keywords": [
     "error-handling",
